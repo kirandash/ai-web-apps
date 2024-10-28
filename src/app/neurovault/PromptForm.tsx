@@ -28,7 +28,7 @@ const PromptForm = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt, firstMessage }),
+        body: JSON.stringify({ prompt, firstMessage: firstMessage.current }),
       });
 
       if (!response.ok) {
