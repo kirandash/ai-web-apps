@@ -18,7 +18,10 @@ const ResponseAndSources = ({ messages }: Props) => {
   }, [messages]);
 
   return (
-    <div ref={messagesContainerRef}>
+    <div
+      ref={messagesContainerRef}
+      className="w-full flex flex-col space-y-2 overflow-y-scroll max-h-[calc(100vh-250px)]"
+    >
       {messages &&
         messages.length > 0 &&
         messages.map((message, index) => (

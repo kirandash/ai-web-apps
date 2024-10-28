@@ -26,17 +26,23 @@ const PromptInput = ({
   };
 
   return (
-    <div className="flex items-center w-full">
-      <Input
-        type="text"
-        value={prompt}
-        onChange={handlePromptChange}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder || "Type your message here..."}
-      />
-      <Button onClick={handlePromptSubmit} disabled={disabled} className="ml-2">
-        Send
-      </Button>
+    <div className="flex items-center w-full flex-col space-y-2">
+      <div className="flex w-full">
+        <Input
+          type="text"
+          value={prompt}
+          onChange={handlePromptChange}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder || "Type your message here..."}
+        />
+        <Button
+          onClick={handlePromptSubmit}
+          disabled={disabled}
+          className="ml-2"
+        >
+          Send
+        </Button>
+      </div>
       <p className="text-red-500 ml-2">{error}</p>
     </div>
   );

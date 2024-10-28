@@ -18,11 +18,15 @@ type Props = {
 const Message = ({ message }: Props) => {
   return (
     <div className="flex flex-col space-y-4">
-      <div className="flex">
+      <div className="flex w-full">
         <p
           className={cn(
             "max-w-[90%]",
-            `${message.type === "user" ? "zinc-800 rounded-2xl" : ""}`
+            `${
+              message.type === "user"
+                ? "bg-zinc-800 rounded-3xl p-4 ml-auto"
+                : ""
+            }`
           )}
         >
           {message.text}
