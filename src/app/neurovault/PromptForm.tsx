@@ -2,13 +2,12 @@
 import { TMessage } from "@/components/Message";
 import PromptInput from "@/components/PromptInput";
 import ResponseAndSources from "@/components/ResponseAndSources";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 const PromptForm = () => {
   const [prompt, setPrompt] = useState("");
   const [error, setError] = useState("");
-  // This is a ref variable to inform the API that this is the first message from user and it should be used to initiate a chain
-  const firstMessage = useRef(true);
+
   const [messages, setMessages] = useState<TMessage[]>([
     {
       text: "Hello! I'm a bot who will remember everything about you. Use me to save your thoughts, ideas, and memories. I can also help you recall them later. Try me out by typing something below.",
@@ -28,7 +27,10 @@ const PromptForm = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt, firstMessage: firstMessage.current }),
+        body: JSON.stringify({
+          prompt,
+          sessionId: localStorage.getItem("sessionId"),
+        }),
       });
 
       if (!response.ok) {
@@ -38,6 +40,7 @@ const PromptForm = () => {
       }
 
       const data = await response.json();
+      localStorage.setItem("sessionId", data.sessionId);
       setMessages([
         ...messages,
         { text: prompt, type: "user" },
@@ -45,7 +48,6 @@ const PromptForm = () => {
       ]);
       setPrompt("");
       setError("");
-      firstMessage.current = false;
     } catch (error) {
       console.error(error);
       setError("An error occurred. Please try again.");
