@@ -2,11 +2,13 @@
 import { TMessage } from "@/components/Message";
 import PromptInput from "@/components/PromptInput";
 import ResponseAndSources from "@/components/ResponseAndSources";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const PromptForm = () => {
   const [prompt, setPrompt] = useState("");
   const [error, setError] = useState("");
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const hasFetched = useRef(false);
 
   const [messages, setMessages] = useState<TMessage[]>([
     {
@@ -14,6 +16,35 @@ const PromptForm = () => {
       type: "bot",
     },
   ]);
+
+  const fetchMessages = async (sid: string) => {
+    try {
+      const response = await fetch(`/api/getMessages?sessionId=${sid}`);
+      const data = await response.json();
+      console.log(data);
+      if (data.messages) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const formattedMessages: TMessage[] = data.messages.map((msg: any) => ({
+          text: msg.kwargs.content,
+          type: msg.id.includes("HumanMessage") ? "user" : "bot",
+        }));
+        setMessages((prevMessages) => [...prevMessages, ...formattedMessages]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch messages:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!hasFetched.current) {
+      const storedSessionId = localStorage.getItem("sessionId");
+      if (storedSessionId) {
+        setSessionId(storedSessionId);
+        fetchMessages(storedSessionId);
+      }
+      hasFetched.current = true;
+    }
+  }, []);
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPrompt(e.target.value);
@@ -40,7 +71,10 @@ const PromptForm = () => {
       }
 
       const data = await response.json();
-      localStorage.setItem("sessionId", data.sessionId);
+      if (data.sessionId && !sessionId) {
+        setSessionId(data.sessionId);
+        localStorage.setItem("sessionId", data.sessionId);
+      }
       setMessages([
         ...messages,
         { text: prompt, type: "user" },

@@ -1,3 +1,4 @@
+import { getRedisClient } from "@/lib/redis";
 import { ChatOpenAI } from "@langchain/openai";
 import { RedisChatMessageHistory } from "@langchain/redis";
 import { ConversationChain } from "langchain/chains";
@@ -10,6 +11,11 @@ export async function POST(req: Request) {
 
   if (!prompt) {
     return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+  }
+
+  const redisClient = getRedisClient();
+  if (!redisClient.isOpen) {
+    await redisClient.connect();
   }
 
   try {
@@ -25,9 +31,7 @@ export async function POST(req: Request) {
       chatHistory: new RedisChatMessageHistory({
         sessionId,
         sessionTTL: 300,
-        config: {
-          url: process.env.REDIS_URL,
-        },
+        client: redisClient,
       }),
     });
 
