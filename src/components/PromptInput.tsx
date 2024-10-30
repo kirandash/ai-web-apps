@@ -33,7 +33,8 @@ const PromptInput = ({
           value={prompt}
           onChange={handlePromptChange}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder || "Type your message here..."}
+          placeholder={placeholder ?? "Type your message here..."}
+          disabled={disabled}
         />
         <Button
           onClick={handlePromptSubmit}

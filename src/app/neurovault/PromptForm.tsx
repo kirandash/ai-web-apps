@@ -9,7 +9,6 @@ const PromptForm = () => {
   const [error, setError] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const hasFetched = useRef(false);
-
   const [messages, setMessages] = useState<TMessage[]>([
     {
       text: "Hello! I'm a bot who will remember everything about you. Use me to save your thoughts, ideas, and memories. I can also help you recall them later. Try me out by typing something below.",

@@ -37,7 +37,7 @@ const StreamForm = () => {
         source.close();
       }
 
-      // Create new event source
+      // Create new event source - GET request to /api/streaming
       const newSource = new EventSource(`/api/streaming`);
       setSource(newSource);
 
