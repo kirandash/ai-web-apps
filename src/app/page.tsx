@@ -20,6 +20,11 @@ export default function Home() {
             DocuBuddy
           </Link>
         </li>
+        <li>
+          <Link href="/vidinteract" className="underline">
+            VidInteract
+          </Link>
+        </li>
       </ul>
     </div>
   );
