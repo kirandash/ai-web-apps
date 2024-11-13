@@ -1,15 +1,15 @@
 import { HNSWLib } from "@langchain/community/vectorstores/hnswlib";
-import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import { AIMessage, BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
 import { CharacterTextSplitter } from "@langchain/textsplitters";
 import { ConversationalRetrievalQAChain } from "langchain/chains";
 import { NextApiRequest, NextApiResponse } from "next";
 import { YoutubeTranscript } from "youtube-transcript";
 
-let chain;
-const chatHistory = [];
+let chain: ConversationalRetrievalQAChain | undefined;
+const chatHistory: BaseMessage[] = [];
 
-const initChain = async (initialPrompt, transcript) => {
+const initChain = async (initialPrompt: string, transcript: string) => {
   try {
     const model = new ChatOpenAI({
       temperature: 0.8,
@@ -33,8 +33,10 @@ const initChain = async (initialPrompt, transcript) => {
       const directory =
         "/Users/kirandash/workspace/bgwebagency/ai-web-apps/src/hnswlibstore";
       await vectorStore.save(directory);
-      const loadedVectorStore = await HNSWLib.load(directory, embeddings);
-    } catch (error) {}
+      await HNSWLib.load(directory, embeddings);
+    } catch (err: unknown) {
+      console.error("Error loading vector store:", err);
+    }
 
     chain = ConversationalRetrievalQAChain.fromLLM(
       model,
@@ -54,8 +56,9 @@ const initChain = async (initialPrompt, transcript) => {
     chatHistory.push(new AIMessage(response.text));
 
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(error);
+    throw error;
   }
 };
 
@@ -106,7 +109,7 @@ export default async function handler(
       try {
         chatHistory.push(new HumanMessage(prompt));
 
-        const response = await chain.call({
+        const response = await chain?.call({
           question: prompt,
           chat_history: chatHistory,
         });

@@ -1,18 +1,19 @@
 import { HNSWLib } from "@langchain/community/vectorstores/hnswlib";
+import { AIMessage, BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
+import { CharacterTextSplitter } from "@langchain/textsplitters";
+import { ConversationalRetrievalQAChain } from "langchain/chains";
 import { NextResponse } from "next/server";
 import { YoutubeTranscript } from "youtube-transcript";
-// import {ConversationalRetrievalChain} from "langchain/chains";
-// import { CharacterTextSplitter } from "@langchain/textsplitters";
 
 export const runtime = "nodejs";
 
-let chain;
-const chatHistory = [];
+let chain: ConversationalRetrievalQAChain | undefined;
+const chatHistory: BaseMessage[] = [];
 
-const initChain = async (initialPrompt, transcript) => {
+const initChain = async (initialPrompt: string, transcript: string) => {
   try {
-    const model = new ChatOpenAI({
+    const chatModel = new ChatOpenAI({
       temperature: 0.8,
     });
 
@@ -20,32 +21,37 @@ const initChain = async (initialPrompt, transcript) => {
       model: "text-embedding-3-small",
     });
 
-    console.log("initialPrompt", initialPrompt);
+    const textSplitter = new CharacterTextSplitter({
+      separator: " ",
+      chunkSize: 500,
+      chunkOverlap: 100,
+    });
 
-    const vectorStore = await HNSWLib.fromDocuments(
-      [
-        {
-          pageContent: transcript,
-          metadata: {},
-        },
-      ],
-      embeddings
-    );
-
-    console.log("vectorStore", vectorStore);
+    const docs = await textSplitter.createDocuments([transcript]);
+    const vectorStore = await HNSWLib.fromDocuments(docs, embeddings);
 
     const directory =
       "/Users/kirandash/workspace/bgwebagency/ai-web-apps/src/app/api/video-interact";
 
-    console.log("directory", directory);
-
     await vectorStore.save(directory);
+    await HNSWLib.load(directory, embeddings);
 
-    console.log("saved");
+    chain = ConversationalRetrievalQAChain.fromLLM(
+      chatModel,
+      vectorStore.asRetriever(),
+      { verbose: true }
+    );
 
-    const loadedVectorStore = await HNSWLib.load(directory, embeddings);
-  } catch (error) {
+    const response = await chain.call({
+      question: initialPrompt,
+      chat_history: chatHistory,
+    });
+
+    chatHistory.push(new AIMessage(response.text));
+    return response;
+  } catch (error: unknown) {
     console.error(error);
+    throw error;
   }
 };
 
@@ -60,10 +66,7 @@ export async function POST(req: Request) {
     try {
       const initialPrompt = `Give me a summary of the transcript: ${prompt}`;
 
-      chatHistory.push({
-        role: "user",
-        content: initialPrompt,
-      });
+      chatHistory.push(new HumanMessage(initialPrompt));
 
       const transcriptResponse = await YoutubeTranscript.fetchTranscript(
         prompt
@@ -83,19 +86,33 @@ export async function POST(req: Request) {
 
       const response = await initChain(initialPrompt, transcript);
 
-      return NextResponse.json({ result: "", chatHistory });
-    } catch {
+      return NextResponse.json({ result: response, chatHistory });
+    } catch (error: unknown) {
+      console.error("Error processing first message:", error);
       return NextResponse.json({
         error: "An error occurred. Please try again",
       });
     }
-  } else {
   }
 
   try {
-    return NextResponse.json({ result: "" });
-  } catch (error) {
-    console.error(error);
+    chatHistory.push(new HumanMessage(prompt));
+
+    if (!chain) {
+      return NextResponse.json(
+        { error: "Chain not initialized" },
+        { status: 500 }
+      );
+    }
+
+    const response = await chain.call({
+      question: prompt,
+      chat_history: chatHistory,
+    });
+
+    return NextResponse.json({ result: response, chatHistory });
+  } catch (error: unknown) {
+    console.error("Error processing message:", error);
     return NextResponse.json({ error: "An error occurred. Please try again" });
   }
 }
