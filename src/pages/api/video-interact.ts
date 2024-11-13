@@ -29,6 +29,7 @@ const initChain = async (initialPrompt: string, transcript: string) => {
 
     const vectorStore = await HNSWLib.fromDocuments(docs, embeddings);
 
+    // Note that this will not work on prod
     const directory =
       "/Users/kirandash/workspace/bgwebagency/ai-web-apps/src/hnswlibstore";
     await vectorStore.save(directory);
