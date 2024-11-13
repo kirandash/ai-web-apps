@@ -29,14 +29,10 @@ const initChain = async (initialPrompt: string, transcript: string) => {
 
     const vectorStore = await HNSWLib.fromDocuments(docs, embeddings);
 
-    try {
-      const directory =
-        "/Users/kirandash/workspace/bgwebagency/ai-web-apps/src/hnswlibstore";
-      await vectorStore.save(directory);
-      await HNSWLib.load(directory, embeddings);
-    } catch (err: unknown) {
-      console.error("Error loading vector store:", err);
-    }
+    const directory =
+      "/Users/kirandash/workspace/bgwebagency/ai-web-apps/src/hnswlibstore";
+    await vectorStore.save(directory);
+    await HNSWLib.load(directory, embeddings);
 
     chain = ConversationalRetrievalQAChain.fromLLM(
       model,
